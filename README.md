@@ -23,4 +23,3 @@ Using NestJS to build a backend that integrates multiple payment gateways (e.g.,
 
 2. Cost-Based Routing with AI Optimization
 Using the AI model to predict the least expensive gateway for each transaction, based on transaction amount, type (local or international), and currency.
-
