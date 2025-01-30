@@ -1,13 +1,14 @@
 /* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { PaymentModule } from './payment/payment.module';
+import { PaymentService } from './payment/payment.service';
+import { FileStorageService } from './fileStorage/fileStorage.service';
+import { MockGatewayService } from './mockGateways/mockGateway.service';
+import { PaymentController } from './payment/payment.controller';
 
 
 @Module({
-  imports: [PaymentModule],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [],
+  controllers: [PaymentController],
+  providers: [PaymentService, MockGatewayService, FileStorageService],
 })
 export class AppModule {}
