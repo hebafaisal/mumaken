@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prettier/prettier */
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import{ HttpException, HttpStatus, Injectable } from "@nestjs/common"; 
 import { FileStorageService } from "src/fileStorage/fileStorage.service";
 import { MockGatewayService } from "src/mockGateways/mockGateway.service";
 
@@ -106,7 +106,7 @@ export class PaymentService {
       throw new HttpException({ status: 'failure', message: paymentResult.message }, HttpStatus.BAD_REQUEST);
 
     } catch (error) {
-      console.error(`Payment failed with gateway ${gateway.name}:`, error.message);
+      console.error(`Payment failed with gateway ${gateway.name}:, error.message`);
       this.incrementFailureCount(gateway.name);
       if (this.gateways.filter(g => g.attempts < 20).length === 0) {
         throw new HttpException({ status: 'failure', message: 'All gateways failed' }, HttpStatus.BAD_REQUEST);

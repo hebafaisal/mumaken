@@ -12,7 +12,7 @@ export class MockGatewayService {
     CCAvenue: { success: false, message: 'Payment failed' },
   };
 
-  private readonly aiModelUrl = 'https://5ac3-51-211-220-20.ngrok-free.app/docs/'; 
+  private readonly aiModelUrl = 'https://82ea-51-211-220-20.ngrok-free.app/docs#'; 
 
   private async decideGateway(paymentDetails: any): Promise<string> {
     try {
