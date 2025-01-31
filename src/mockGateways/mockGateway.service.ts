@@ -7,7 +7,6 @@ import axios from 'axios';
 @Injectable()
 export class MockGatewayService {
   private readonly gatewayResponses = {
-    Mada: { success: true, message: 'Payment successful' },
     Telr: { success: false, message: 'Gateway unavailable' },
     Geidea: { success: true, message: 'Payment successful' },
     CCAvenue: { success: false, message: 'Payment failed' },
@@ -25,7 +24,7 @@ export class MockGatewayService {
       }
     } catch (error) {
       console.error('AI model error:', error.message);
-      return 'Mada'; 
+      return 'Geidea'; 
     }
   }
 

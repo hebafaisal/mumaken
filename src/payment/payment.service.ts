@@ -54,67 +54,65 @@ export class PaymentService {
   }
 
   async createPayment(
-    cardInfo: { name: string; cardNumber: string; expiryDate: string; cvv: string },
-    amount: number,
-    currency: string,
-  ): Promise<any> {
-    if (amount <= 0) {
-      throw new HttpException({ status: 'failure', message: 'Amount must be greater than zero' }, HttpStatus.BAD_REQUEST);
+  cardInfo: { name: string; cardNumber: string; expiryDate: string; cvv: string },
+  amount: number,
+  currency: string,
+): Promise<any> {
+  if (amount <= 0) {
+    throw new HttpException({ status: 'failure', message: 'Amount must be greater than zero' }, HttpStatus.BAD_REQUEST);
+  }
+
+  const isCardNumberValid = cardInfo.cardNumber.length === 16 && !isNaN(Number(cardInfo.cardNumber));
+  const isExpiryDateValid = /^\d{2}\/\d{2}$/.test(cardInfo.expiryDate);
+  const isCvvValid = cardInfo.cvv.length === 3 && !isNaN(Number(cardInfo.cvv));
+
+  if (!isCardNumberValid && !isExpiryDateValid && !isCvvValid) {
+    throw new HttpException(
+      { status: 'failure', message: 'Payment processed failed because of invalid data' },
+      HttpStatus.BAD_REQUEST
+    );
+  }
+
+  const cardType = this.detectCardType(cardInfo.cardNumber);
+
+  for (const gateway of this.gateways) {
+    if (!gateway.acceptedCards.includes(cardType)) {
+      console.log(`Skipping gateway ${gateway.name} - does not accept ${cardType}`);
+      continue; 
     }
 
-    if (cardInfo.cardNumber.length !== 16 || isNaN(Number(cardInfo.cardNumber))) {
-      throw new HttpException({ status: 'failure', message: 'Invalid card number. Must be 16 digits' }, HttpStatus.BAD_REQUEST);
-    }
+    console.log(`Attempting payment with gateway: ${gateway.name}`);
+    gateway.attempts++; 
 
-    if (!/^\d{2}\/\d{2}$/.test(cardInfo.expiryDate)) {
-      throw new HttpException({ status: 'failure', message: 'Invalid expiry date. Must be in MM/YY format' }, HttpStatus.BAD_REQUEST);
-    }
+    try {
+      const paymentResult = await this.mockGatewayService.processPayment(cardInfo, amount, currency);
 
-    if (cardInfo.cvv.length !== 3 || isNaN(Number(cardInfo.cvv))) {
-      throw new HttpException({ status: 'failure', message: 'Invalid CVV. Must be 3 digits' }, HttpStatus.BAD_REQUEST);
-    }
+      if (paymentResult.status === 'success') {
+        const paymentDetails = {
+          cardholderName: cardInfo.name,
+          cardType: cardType,
+          cardNumber: cardInfo.cardNumber,
+          amount: amount,
+          currency: currency,
+          status: paymentResult.status,
+          message: paymentResult.message, 
+          gateway: gateway.name,
+        };
 
-    const cardType = this.detectCardType(cardInfo.cardNumber);
-
-    for (const gateway of this.gateways) {
-      if (!gateway.acceptedCards.includes(cardType)) {
-        console.log(`Skipping gateway ${gateway.name} - does not accept ${cardType}`);
-        continue; 
+        await this.fileStorageService.addPayment(paymentDetails);  
+        return { status: 'success', message: 'Payment processed successfully', paymentDetails };
       }
 
-      console.log(`Attempting payment with gateway: ${gateway.name}`);
-      gateway.attempts++; 
+      throw new HttpException({ status: 'failure', message: paymentResult.message }, HttpStatus.BAD_REQUEST);
 
-      try {
-        const paymentResult = await this.mockGatewayService.processPayment(cardInfo, amount, currency);
-        
-        if (paymentResult.status === 'success') {
-          const paymentDetails = {
-            cardholderName: cardInfo.name,
-            cardType: cardType,
-            cardNumber: cardInfo.cardNumber,
-            amount: amount,
-            currency: currency,
-            status: paymentResult.status,
-            message: paymentResult.message, 
-            gateway: gateway.name,
-          };
-
-          await this.fileStorageService.addPayment(paymentDetails);  
-          return { status: 'success', message: 'Payment processed successfully', paymentDetails };
-        }
-        
-        throw new HttpException({ status: 'failure', message: paymentResult.message }, HttpStatus.BAD_REQUEST);
-
-      } catch (error) {
-        console.error(`Payment failed with gateway ${gateway.name}:`, error.message);
-        this.incrementFailureCount(gateway.name);
-        if (this.gateways.filter(g => g.attempts < 20).length === 0) {
-          throw new HttpException({ status: 'failure', message: 'All gateways failed' }, HttpStatus.BAD_REQUEST);
-        }
+    } catch (error) {
+      console.error(`Payment failed with gateway ${gateway.name}:`, error.message);
+      this.incrementFailureCount(gateway.name);
+      if (this.gateways.filter(g => g.attempts < 20).length === 0) {
+        throw new HttpException({ status: 'failure', message: 'All gateways failed' }, HttpStatus.BAD_REQUEST);
       }
     }
-
+  }
     throw new HttpException({ status: 'failure', message: 'All payment attempts failed' }, HttpStatus.BAD_REQUEST);
   }
 }
