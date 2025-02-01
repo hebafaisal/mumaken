@@ -1,4 +1,4 @@
-# Who are the (name) team?
+# Who are mumaken team?
 
 Our team consists of 5 memers with differend tracks:
 1. Heba - Software Engineering 
